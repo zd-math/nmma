@@ -3,7 +3,7 @@ from scipy.stats import norm
 from ..core.base import NMMALikelihood, initialisation_args_from_signature_and_namespace
 from ..core.conversion import convert_mtot_mni
 from ..core.utils import read_trigger_time
-from . import eror_models, model, utils, systematics
+from . import error_models, model, utils, systematics
 from .lightcurve_handling import post_process_bestfit as lch_bestfit
 from .plotting_utils import bolometric_lc_plot
 
