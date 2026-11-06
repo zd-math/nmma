@@ -217,7 +217,7 @@ class BasicEMTransient:
 
         self.set_detection_limit(detection_limit)
 
-        self.error_model = eror_models.ERROR_MODELS[error_model]
+        self.error_model = error_models.ERROR_MODELS[error_model]
 
         self.verbose = verbose
         
