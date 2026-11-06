@@ -1,9 +1,9 @@
 import numpy as np
-from scipy.stats import norm, truncnorm
+from scipy.stats import norm
 from ..core.base import NMMALikelihood, initialisation_args_from_signature_and_namespace
 from ..core.conversion import convert_mtot_mni
 from ..core.utils import read_trigger_time
-from . import model, utils, systematics
+from . import eror_models, model, utils, systematics
 from .lightcurve_handling import post_process_bestfit as lch_bestfit
 from .plotting_utils import bolometric_lc_plot
 
@@ -79,6 +79,7 @@ class EMTransientLikelihood(NMMALikelihood):
         priors,
         filters=None,
         detection_limit=np.inf,
+        error_model = "truncated_gaussian",
         verbose=False,
         **kwargs,
     ):
@@ -89,6 +90,7 @@ class EMTransientLikelihood(NMMALikelihood):
             systematics_handler,
             priors,
             detection_limit,
+            error_model,
             verbose,
         )
 
@@ -195,6 +197,7 @@ class BasicEMTransient:
         systematics_handler,
         priors,
         detection_limit,
+        error_model,
         verbose,
     ):
 
@@ -212,8 +215,12 @@ class BasicEMTransient:
         systematics_handler.reset(self.light_curve_model.model_times, priors)
         self.systematics_handler = systematics_handler
 
-        self.verbose = verbose
         self.set_detection_limit(detection_limit)
+
+        self.error_model = eror_models.ERROR_MODELS[error_model]
+
+        self.verbose = verbose
+        
 
     def set_detection_limit(self, detection_limit):
         self.detection_limit = detection_limit
@@ -277,7 +284,7 @@ class BasicEMTransient:
         # evaluate the chisquare
         if finiteIdx.sum() >= 1:
             minus_chisquare = np.sum(
-                self.truncated_gaussian(
+                self.error_model(
                     data_mag[finiteIdx],
                     loc=est_mag[finiteIdx],
                     scale=data_sigma[finiteIdx],
@@ -301,12 +308,6 @@ class BasicEMTransient:
                 data_mag[infIdx], est_mag[infIdx], upperlim_sigma[infIdx]
             )
         return minus_chisquare, np.sum(gausslogsf)
-
-    def truncated_gaussian(self, m_det, loc, scale, upper_lim):
-
-        a = -np.inf  # no lower bound of truncation
-        b = (upper_lim - loc) / scale  # upper bound in number of std-deviations
-        return truncnorm.logpdf(m_det, a, b, loc=loc, scale=scale)
 
     def final_diagnostics(self, bestfit_params, args, result=None):
         obs_times, obs_lc = self.light_curve_model.gen_detector_lc(bestfit_params)
@@ -348,6 +349,7 @@ class MultiFilterTransient(BasicEMTransient):
         systematics_handler,
         priors,
         detection_limit,
+        error_model,
         verbose,
     ):
 
@@ -362,6 +364,7 @@ class MultiFilterTransient(BasicEMTransient):
             systematics_handler,
             priors,
             detection_limit,
+            error_model,
             verbose,
         )
 
